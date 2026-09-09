@@ -691,7 +691,7 @@ const CONFIG = {
 
   song: {
     title: "a song that reminds me of you",
-    src: "" // add an audio URL to enable playback
+    src: "Thangame.mp3" // add an audio URL to enable playback
   },
 
   noticedThings: [
@@ -1307,7 +1307,7 @@ function renderFinal(){
     </div>
     <div class="future-input-wrap" id="futureWrap">
       <textarea id="futureText" placeholder="${CONFIG.futureMemoryPrompt}"></textarea>
-      <button class="future-save" id="futureSave">keep this</button>
+      <button class="future-save" id="futureSave" onclick="window.location.href='seen-delivered.html'">keep this</button>
       <p class="future-saved-note" id="futureSavedNote">kept — for whenever we get there.</p>
     </div>
     <p class="the-end">the place between memories</p>
