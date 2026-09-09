@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>seen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     ===  EDIT ME — see the CONFIG block at the bottom of the  ===
+     ===  <script> for names, messages, and the closing line.  ===
+     ============================================================ */
+  :root{
+    --bg:#14110F;
+    --bg-raised:#1C1712;
+    --received:#221D18;
+    --received-text:#EDE6DC;
+    --sent:#C98A6B;
+    --sent-text:#211510;
+    --muted:rgba(237,230,220,0.42);
+    --muted-soft:rgba(237,230,220,0.62);
+    --hairline:rgba(237,230,220,0.08);
+    --accent:#C98A6B;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; padding:0; height:100%; background:#0b0906; }
+  body{ font-family:'Inter', -apple-system, sans-serif; color:var(--received-text); }
+  ::selection{ background:var(--sent); color:var(--sent-text); }
+
+  a,button{ font-family:inherit; }
+  button{ background:none; border:none; }
+  a:focus-visible, button:focus-visible, [tabindex]:focus-visible{
+    outline:2px solid var(--accent); outline-offset:2px;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important; }
+  }
+
+  .stage{
+    min-height:100dvh;
+    display:flex; justify-content:center; align-items:stretch;
+    background:
+      radial-gradient(circle at 30% 10%, rgba(201,138,107,0.08), transparent 55%),
+      #0b0906;
+  }
+  .phone{
+    width:100%; max-width:412px; min-width:375px;
+    background:var(--bg);
+    position:relative;
+    overflow:hidden;
+  }
+  @media (min-width:460px){
+    .phone{ margin:26px 0; border-radius:34px; box-shadow:0 40px 90px -30px rgba(0,0,0,0.7); }
+  }
+
+  .view{ position:absolute; inset:0; display:flex; flex-direction:column; }
+  .view[hidden]{ display:none; }
+
+  /* ================= LOCKSCREEN ================= */
+  #lockscreen{
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(201,138,107,0.14), transparent 55%),
+      linear-gradient(190deg, #17130f, #0e0c0a 80%);
+    justify-content:space-between;
+    align-items:center;
+    padding:64px 22px 34px;
+    cursor:pointer;
+  }
+  .lock-time{
+    text-align:center;
+    margin-top:10px;
+  }
+  .lock-time .t{ font-size:66px; font-weight:600; line-height:1; letter-spacing:-0.02em; }
+  .lock-time .d{ font-size:14px; color:var(--muted-soft); margin-top:10px; }
+
+  .notif{
+    width:100%;
+    background:rgba(255,255,255,0.06);
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:18px;
+    padding:14px 14px;
+    display:flex; gap:12px; align-items:flex-start;
+    animation:notif-in 700ms ease 300ms both;
+  }
+  @keyframes notif-in{ from{ opacity:0; transform:translateY(10px);} to{ opacity:1; transform:translateY(0);} }
+  .notif-avatar{
+    width:38px; height:38px; border-radius:50%; flex-shrink:0;
+    background:linear-gradient(160deg, var(--sent), #8a5a3f);
+    display:flex; align-items:center; justify-content:center;
+    font-size:14px; font-weight:600; color:var(--sent-text);
+  }
+  .notif-body{ flex:1; min-width:0; }
+  .notif-top{ display:flex; justify-content:space-between; align-items:baseline; }
+  .notif-name{ font-size:13.5px; font-weight:600; }
+  .notif-time{ font-size:11.5px; color:var(--muted); }
+  .notif-preview{
+    font-size:13px; color:var(--muted-soft); margin-top:2px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .lock-hint{ font-size:11.5px; color:var(--muted); letter-spacing:0.02em; }
+
+  /* ================= CHAT VIEW ================= */
+  #chat{ background:var(--bg); }
+  .chat-header{
+    display:flex; align-items:center; gap:10px;
+    padding:16px 16px 14px;
+    border-bottom:1px solid var(--hairline);
+    flex-shrink:0;
+    background:linear-gradient(180deg, var(--bg-raised), var(--bg));
+  }
+  .back-arrow{ width:20px; height:20px; color:var(--muted-soft); flex-shrink:0; }
+  .chat-avatar{
+    width:32px; height:32px; border-radius:50%;
+    background:linear-gradient(160deg, var(--sent), #8a5a3f);
+    display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:600; color:var(--sent-text);
+    flex-shrink:0;
+  }
+  .chat-title{ font-size:14.5px; font-weight:600; }
+  .chat-sub{ font-size:11.5px; color:var(--muted); margin-top:1px; }
+
+  .thread{
+    flex:1; overflow-y:auto;
+    padding:18px 14px 12px;
+    display:flex; flex-direction:column;
+    scroll-behavior:smooth;
+  }
+  .day-sep{
+    text-align:center; font-size:11px; color:var(--muted);
+    margin:18px 0 12px;
+    letter-spacing:0.02em;
+  }
+  .bubble-row{
+    display:flex;
+    margin-bottom:6px;
+    opacity:0; transform:translateY(8px);
+    animation:bubble-in 480ms ease forwards;
+  }
+  @keyframes bubble-in{ to{ opacity:1; transform:translateY(0); } }
+  .bubble-row.her{ justify-content:flex-start; }
+  .bubble-row.me{ justify-content:flex-end; }
+  .bubble{
+    max-width:76%;
+    padding:9px 13px;
+    font-size:14.5px;
+    line-height:1.42;
+    border-radius:16px;
+  }
+  .her .bubble{ background:var(--received); color:var(--received-text); border-bottom-left-radius:4px; }
+  .me .bubble{ background:var(--sent); color:var(--sent-text); border-bottom-right-radius:4px; }
+
+  .typing-row{ display:flex; justify-content:flex-start; margin-bottom:6px; }
+  .typing-bubble{
+    background:var(--received); border-radius:16px; border-bottom-left-radius:4px;
+    padding:11px 14px; display:flex; gap:4px;
+  }
+  .typing-bubble span{
+    width:5px; height:5px; border-radius:50%; background:var(--muted-soft);
+    animation:blink 1.2s infinite;
+  }
+  .typing-bubble span:nth-child(2){ animation-delay:0.15s; }
+  .typing-bubble span:nth-child(3){ animation-delay:0.3s; }
+  @keyframes blink{ 0%,60%,100%{ opacity:0.25; } 30%{ opacity:1; } }
+
+  .receipt{
+    font-size:10.5px; color:var(--muted);
+    text-align:right; margin:2px 2px 10px;
+  }
+
+  /* ================= COMPOSER / UNSENT DRAFT ================= */
+  .composer-wrap{
+    flex-shrink:0;
+    border-top:1px solid var(--hairline);
+    padding:12px 14px 18px;
+    background:var(--bg-raised);
+  }
+  .draft-label{
+    font-size:10.5px; color:var(--muted);
+    margin-bottom:6px; letter-spacing:0.02em;
+    display:flex; align-items:center; gap:6px;
+    opacity:0; transition:opacity 500ms ease;
+  }
+  .draft-label.show{ opacity:1; }
+  .draft-dot{ width:5px; height:5px; border-radius:50%; background:#b4593f; }
+
+  .composer{
+    display:flex; align-items:flex-end; gap:8px;
+  }
+  .composer-field{
+    flex:1;
+    background:rgba(255,255,255,0.05);
+    border:1px solid var(--hairline);
+    border-radius:20px;
+    padding:10px 14px;
+    font-size:14.5px;
+    color:var(--received-text);
+    min-height:20px;
+    line-height:1.4;
+  }
+  .composer-field.placeholder-text{ color:var(--muted); }
+  .caret{
+    display:inline-block; width:1.5px; height:15px;
+    background:var(--muted-soft); margin-left:2px;
+    vertical-align:middle;
+    animation:caret-blink 1s step-end infinite;
+  }
+  @keyframes caret-blink{ 50%{ opacity:0; } }
+
+  .send-circle{
+    width:34px; height:34px; border-radius:50%; flex-shrink:0;
+    background:var(--muted);
+    display:flex; align-items:center; justify-content:center;
+    transition:background 300ms ease, transform 200ms ease;
+    cursor:not-allowed;
+  }
+  .send-circle.ready{ background:var(--sent); cursor:pointer; }
+  .send-circle.ready:active{ transform:scale(0.92); }
+  .send-circle svg{ width:15px; height:15px; color:var(--bg); }
+
+  .closing{
+    margin-top:16px;
+    font-size:12.5px; color:var(--muted-soft);
+    text-align:center;
+    opacity:0; transform:translateY(6px);
+    transition:opacity 900ms ease, transform 900ms ease;
+    line-height:1.6;
+  }
+  .closing.show{ opacity:1; transform:translateY(0); }
+
+  .real-send{
+    display:block; margin:14px auto 0;
+    font-size:12.5px; color:var(--sent);
+    text-decoration:none;
+    border:1px solid rgba(201,138,107,0.35);
+    padding:10px 18px;
+    border-radius:100px;
+    text-align:center;
+    width:fit-content;
+    opacity:0; transform:translateY(6px);
+    transition:opacity 900ms ease 200ms, transform 900ms ease 200ms;
+  }
+  .real-send.show{ opacity:1; transform:translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="stage">
+<div class="phone">
+
+  <!-- ================= LOCKSCREEN ================= -->
+  <div class="view" id="lockscreen">
+    <div class="lock-time">
+      <div class="t" id="lockTime">9:41</div>
+      <div class="d" id="lockDate">Monday, September 7</div>
+    </div>
+    <div style="flex:1"></div>
+    <div class="notif" id="notif">
+      <div class="notif-avatar" id="notifAvatar">A</div>
+      <div class="notif-body">
+        <div class="notif-top">
+          <span class="notif-name" id="notifName">Her Name</span>
+          <span class="notif-time">now</span>
+        </div>
+        <div class="notif-preview" id="notifPreview">sent a message</div>
+      </div>
+    </div>
+    <div class="lock-hint">tap to open</div>
+  </div>
+
+  <!-- ================= CHAT VIEW ================= -->
+  <div class="view" id="chat" hidden>
+    <div class="chat-header">
+      <svg class="back-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      <div class="chat-avatar" id="chatAvatar">A</div>
+      <div>
+        <div class="chat-title" id="chatTitle">Her Name</div>
+        <div class="chat-sub" id="chatSub">6 years of this thread</div>
+      </div>
+    </div>
+
+    <div class="thread" id="thread"></div>
+
+    <div class="composer-wrap">
+      <div class="draft-label" id="draftLabel"><span class="draft-dot"></span>not sent · draft</div>
+      <div class="composer">
+        <div class="composer-field" id="composerField"></div>
+        <div class="send-circle" id="sendCircle">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+        </div>
+      </div>
+      <div class="closing" id="closing"></div>
+      <a class="real-send" id="realSend" href="#" target="_blank" rel="noopener">send this to her, for real</a>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+/* =====================================================================
+   CONFIG — the only block you need to touch.
+   Replace the placeholder lines with real texts, dates, and one detail
+   only she would recognize. That one detail is what makes this land —
+   everything else is just scaffolding around it.
+===================================================================== */
+const CONFIG = {
+  herName: "Her Name",
+  yourInitialLetter: "A",   // shown in the avatar circles — use her first initial
+
+  // shown in the lockscreen notification before the thread opens
+  notifPreview: "hey. are you free to talk?",
+
+  // the conversation — 'her' bubbles align left, 'me' bubbles align right.
+  // day separators are the compressed timeline; keep them short.
+  thread: [
+    { day: "6 years ago" },
+    { from: "her", text: "ok this is random but I saw your post and had to say something" },
+    { from: "me", text: "lol go on" },
+    { from: "her", text: "you seem like someone who'd actually reply and not ghost" },
+    { from: "me", text: "we'll see about that" },
+
+    { day: "a few months in" },
+    { from: "her", text: "it's 2am here and I still can't sleep" },
+    { from: "me", text: "same. what's going on" },
+    { from: "her", text: "just a lot. don't really know how to explain it" },
+    { from: "me", text: "you don't have to explain it right. just say it messy, I'll keep up" },
+
+    { day: "2,000+ miles apart, somehow closer" },
+    { from: "her", text: "different time zone, same 11pm meltdown energy" },
+    { from: "me", text: "some things don't need the same time zone" },
+
+    { day: "your worst week that year" },
+    { from: "her", text: "I don't think I can do this one" },
+    { from: "me", text: "you don't have to do all of it today. just the next hour" },
+    { from: "me", text: "I'm not going anywhere, by the way. not now, not later" },
+
+    { day: "the good news call" },
+    { from: "her", text: "I GOT IT. I actually got it" },
+    { from: "me", text: "I KNEW IT. I'm telling everyone whether you like it or not" },
+    { from: "her", text: "you're the only one I wanted to tell first, honestly" },
+
+    { day: "today" },
+    { from: "her", text: CONFIG_notif_placeholder() },
+  ],
+
+  // the message that's typed but never sent — the emotional center of the whole thing
+  unsentDraft: "six years and you still don't fully know how much you hold together just by being you. wanted you to have this in writing, not just in my head.",
+
+  // the quiet line that appears once the draft is sent
+  closingLine: "some things are truer once you actually hit send.",
+
+  // the real message this opens in WhatsApp when they tap "send this to her, for real"
+  whatsappMessage: "I made you something. Six years, all in one place. 🤍",
+  whatsappPhone: "" // digits only incl. country code, or leave blank to open a chat picker
+};
+function CONFIG_notif_placeholder(){ return "hey. are you free to talk?"; }
+
+/* ===================== wire CONFIG into the DOM ===================== */
+document.title = "seen — " + CONFIG.herName;
+document.getElementById('notifAvatar').textContent = CONFIG.yourInitialLetter;
+document.getElementById('chatAvatar').textContent = CONFIG.yourInitialLetter;
+document.getElementById('notifName').textContent = CONFIG.herName;
+document.getElementById('chatTitle').textContent = CONFIG.herName;
+document.getElementById('notifPreview').textContent = CONFIG.notifPreview;
+
+/* ===================== live lockscreen clock ===================== */
+function updateClock(){
+  const now = new Date();
+  let h = now.getHours(), m = now.getMinutes();
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12; if (h === 0) h = 12;
+  document.getElementById('lockTime').textContent = `${h}:${String(m).padStart(2,'0')}`;
+  document.getElementById('lockDate').textContent = now.toLocaleDateString(undefined, { weekday:'long', month:'long', day:'numeric' });
+}
+updateClock();
+setInterval(updateClock, 15000);
+
+/* ===================== lockscreen -> chat ===================== */
+const lockscreen = document.getElementById('lockscreen');
+const chatView = document.getElementById('chat');
+let opened = false;
+
+lockscreen.addEventListener('click', () => {
+  if (opened) return;
+  opened = true;
+  if (navigator.vibrate) navigator.vibrate(12);
+  lockscreen.style.transition = 'opacity 400ms ease, transform 400ms ease';
+  lockscreen.style.opacity = '0';
+  lockscreen.style.transform = 'translateY(-14px)';
+  setTimeout(() => {
+    lockscreen.hidden = true;
+    chatView.hidden = false;
+    playThread();
+  }, 380);
+});
+
+/* ===================== play the thread as one orchestrated reveal ===================== */
+const threadEl = document.getElementById('thread');
+
+function scrollToBottom(){ threadEl.scrollTop = threadEl.scrollHeight; }
+
+function addDaySep(text){
+  const el = document.createElement('div');
+  el.className = 'day-sep';
+  el.textContent = text;
+  threadEl.appendChild(el);
+  scrollToBottom();
+}
+
+function addTyping(){
+  return new Promise(resolve => {
+    const row = document.createElement('div');
+    row.className = 'typing-row';
+    row.innerHTML = '<div class="typing-bubble"><span></span><span></span><span></span></div>';
+    threadEl.appendChild(row);
+    scrollToBottom();
+    setTimeout(() => { row.remove(); resolve(); }, 900);
+  });
+}
+
+function addBubble(from, text){
+  const row = document.createElement('div');
+  row.className = `bubble-row ${from}`;
+  const b = document.createElement('div');
+  b.className = 'bubble';
+  b.textContent = text;
+  row.appendChild(b);
+  threadEl.appendChild(row);
+  scrollToBottom();
+}
+
+async function playThread(){
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  for (const item of CONFIG.thread) {
+    if (item.day) {
+      addDaySep(item.day);
+      await wait(reduceMotion ? 0 : 260);
+      continue;
+    }
+    if (item.from === 'her' && !reduceMotion) {
+      await addTyping();
+    }
+    addBubble(item.from, item.text);
+    await wait(reduceMotion ? 0 : 420);
+  }
+  revealComposer();
+}
+function wait(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+/* ===================== the unsent draft ===================== */
+const composerField = document.getElementById('composerField');
+const sendCircle = document.getElementById('sendCircle');
+const draftLabel = document.getElementById('draftLabel');
+const closing = document.getElementById('closing');
+const realSend = document.getElementById('realSend');
+let sent = false;
+
+function revealComposer(){
+  composerField.innerHTML = CONFIG.unsentDraft.replace(/</g,'&lt;') + '<span class="caret"></span>';
+  draftLabel.classList.add('show');
+  sendCircle.classList.add('ready');
+}
+
+sendCircle.addEventListener('click', () => {
+  if (sent || !sendCircle.classList.contains('ready')) return;
+  sent = true;
+  if (navigator.vibrate) navigator.vibrate([10,30,10]);
+
+  addBubble('me', CONFIG.unsentDraft);
+  const receipt = document.createElement('div');
+  receipt.className = 'receipt';
+  receipt.textContent = 'Delivered';
+  threadEl.appendChild(receipt);
+  scrollToBottom();
+
+  composerField.textContent = '';
+  composerField.classList.add('placeholder-text');
+  draftLabel.classList.remove('show');
+  sendCircle.classList.remove('ready');
+
+  setTimeout(() => { receipt.textContent = 'Read'; }, 1400);
+
+  setTimeout(() => {
+    closing.textContent = CONFIG.closingLine;
+    closing.classList.add('show');
+    const phone = CONFIG.whatsappPhone ? CONFIG.whatsappPhone.replace(/\D/g,'') : '';
+    realSend.href = `https://wa.me/${phone}?text=${encodeURIComponent(CONFIG.whatsappMessage)}`;
+    realSend.classList.add('show');
+  }, 1900);
+});
+</script>
+</body>
+</html>
